@@ -1,0 +1,203 @@
+.home-content {
+  padding-top: 90px;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.home-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.welcome-section {
+  text-align: center;
+  margin-bottom: 50px;
+  color: white;
+}
+
+.welcome-section h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.welcome-section p {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.exomes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 30px;
+  margin-bottom: 50px;
+}
+
+.exome-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.exome-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.exome-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.exome-header h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  flex: 1;
+  min-width: 200px;
+}
+
+.exome-category {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.exome-content {
+  overflow-x: hidden;
+  justify-content: space-between;
+  flex: 1;
+  margin-bottom: 25px;
+  display: flex;
+  flex-direction: column;
+}
+
+.exome-description {
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  font-size: 0.95rem;
+}
+
+.exome-details {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.detail-item i {
+  color: #667eea;
+  width: 16px;
+  text-align: center;
+}
+
+.exome-actions {
+  margin-top: 20px;
+}
+
+.request-btn {
+  width: 100%;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.request-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+}
+
+.request-btn i {
+  font-size: 16px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .home-container {
+    padding: 30px 15px;
+  }
+  
+  .welcome-section h1 {
+    font-size: 2.5rem;
+  }
+  
+  .welcome-section p {
+    font-size: 1.1rem;
+  }
+  
+  .exomes-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .exome-card {
+    padding: 25px 20px;
+  }
+  
+  .exome-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .exome-header h3 {
+    min-width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .welcome-section h1 {
+    font-size: 2rem;
+  }
+  
+  .welcome-section p {
+    font-size: 1rem;
+  }
+  
+  .exome-card {
+    padding: 20px 15px;
+  }
+  
+  .exome-header h3 {
+    font-size: 1.3rem;
+  }
+} 
