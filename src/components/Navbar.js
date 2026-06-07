@@ -18,7 +18,7 @@ const Navbar = ({ isLoggedIn, userRole, currentPage, onPageChange, onLogout }) =
       <div className="nav-container">
         <div className="nav-logo" onClick={() => handlePageChange('home')}>
           <i className="fas fa-calendar-check"></i>
-          <span>Exome Scheduler</span>
+          <span>Genetic Analysis Platform</span>
         </div>
         
         <ul className={`nav-menu ${isMenuOpen ? 'active' : ''}`}>
@@ -93,4 +93,4 @@ const Navbar = ({ isLoggedIn, userRole, currentPage, onPageChange, onLogout }) =
   );
 };
 
-export default Navbar; 
+export default Navbar;

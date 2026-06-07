@@ -377,7 +377,7 @@ app.post('/api/exomes', async (req, res) => {
     if (!name || !slot || !runs) {
       return res.status(400).json({ 
         status: 'error', 
-        message: 'Name, slot, and runs are required' 
+        message: 'Name, capacity, and analysis runs are required'
       });
     }
 
@@ -400,7 +400,7 @@ app.post('/api/exomes', async (req, res) => {
     res.json({
       status: 'ok',
       exome: rows[0],
-      message: 'Exome created successfully'
+      message: 'Analysis created successfully'
     });
   } catch (err) {
     console.error('Error creating exome:', err);
@@ -417,7 +417,7 @@ app.put('/api/exomes/:id', async (req, res) => {
     if (!name || !slot || !runs) {
       return res.status(400).json({ 
         status: 'error', 
-        message: 'Name, slot, and runs are required' 
+        message: 'Name, capacity, and analysis runs are required'
       });
     }
 
@@ -443,14 +443,14 @@ app.put('/api/exomes/:id', async (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({ 
         status: 'error', 
-        message: 'Exome not found' 
+        message: 'Analysis not found'
       });
     }
 
     res.json({
       status: 'ok',
       exome: rows[0],
-      message: 'Exome updated successfully'
+      message: 'Analysis updated successfully'
     });
   } catch (err) {
     console.error('Error updating exome:', err);
@@ -470,7 +470,7 @@ app.delete('/api/exomes/:id', async (req, res) => {
     if (parseInt(runCheck[0].count) > 0) {
       return res.status(400).json({ 
         status: 'error', 
-        message: 'Cannot delete exome with existing patient runs' 
+        message: 'Cannot delete analysis with existing analysis runs'
       });
     }
 
@@ -480,13 +480,13 @@ app.delete('/api/exomes/:id', async (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({ 
         status: 'error', 
-        message: 'Exome not found' 
+        message: 'Analysis not found'
       });
     }
 
     res.json({
       status: 'ok',
-      message: 'Exome deleted successfully'
+      message: 'Analysis deleted successfully'
     });
   } catch (err) {
     console.error('Error deleting exome:', err);
@@ -522,7 +522,7 @@ app.post('/api/exomes/:id/add-patient', async (req, res) => {
     if (exomeRows.length === 0) {
       return res.status(404).json({ 
         status: 'error', 
-        message: 'Exome not found' 
+        message: 'Analysis not found'
       });
     }
 
@@ -532,7 +532,7 @@ app.post('/api/exomes/:id/add-patient', async (req, res) => {
     if (availableSlots <= 0) {
       return res.status(400).json({ 
         status: 'error', 
-        message: 'No available slots for this exome' 
+        message: 'No analysis capacity available'
       });
     }
 
@@ -559,7 +559,7 @@ app.post('/api/exomes/:id/add-patient', async (req, res) => {
     res.json({
       status: 'ok',
       exome_run: rows[0],
-      message: 'Patient added to exome successfully'
+      message: 'Patient added to analysis successfully'
     });
   } catch (err) {
     console.error('Error adding patient to exome:', err);
@@ -787,7 +787,7 @@ app.get('/api/hpo-terms', async (req, res) => {
     if (!patient || !exome_id) {
       return res.status(400).json({ 
         status: 'error', 
-        message: 'Patient data and exome ID are required' 
+        message: 'Patient data and analysis ID are required'
       });
     }
 
@@ -798,7 +798,7 @@ app.get('/api/hpo-terms', async (req, res) => {
     if (exomeRows.length === 0) {
       return res.status(404).json({ 
         status: 'error', 
-        message: 'Exome not found' 
+        message: 'Analysis not found'
       });
     }
 
@@ -880,14 +880,14 @@ app.get('/api/hpo-terms', async (req, res) => {
       exome_id, 
       patientId, 
       credentialsId, // Use the actual credentials ID or null
-      patient.description || 'Patient exome request'
+      patient.description || 'Patient analysis request'
     ]);
 
     await client.query('COMMIT');
 
     res.json({
       status: 'ok',
-      message: 'Patient registered and exome request created successfully. Waiting for approval.',
+      message: 'Patient registered and analysis request created successfully. Waiting for approval.',
       patient_id: patientId,
       request_id: exomeRequestRows[0].id_request
     });
@@ -1008,7 +1008,7 @@ app.post('/api/family-exome-request', async (req, res) => {
     if (!id_credentials || !id_exome || !patient_ids || patient_ids.length === 0) {
       return res.status(400).json({
         status: 'error',
-        message: 'Doctor, exome and selected patients are required'
+        message: 'Doctor, analysis and selected patients are required'
       });
     }
 
@@ -1031,7 +1031,7 @@ app.post('/api/family-exome-request', async (req, res) => {
     if (exomeResult.rows.length === 0) {
       return res.status(404).json({
         status: 'error',
-        message: 'Exome not found'
+        message: 'Analysis not found'
       });
     }
 
@@ -1056,8 +1056,8 @@ app.post('/api/family-exome-request', async (req, res) => {
         id_credentials,
         selectedCount,
         canFit
-          ? 'Family exome request'
-          : 'Family exome waitlist request',
+          ? 'Family analysis request'
+          : 'Family analysis waitlist request',
         canFit ? 'Pending' : 'Waiting'
       ]
     );
@@ -1082,8 +1082,8 @@ app.post('/api/family-exome-request', async (req, res) => {
             patientId,
             id_credentials,
             canFit
-              ? 'Family exome request'
-              : 'Family exome waitlist request',
+              ? 'Family analysis request'
+              : 'Family analysis waitlist request',
             requestGroupId
           ]
         );
@@ -1095,8 +1095,8 @@ app.post('/api/family-exome-request', async (req, res) => {
           id_request_group: requestGroupId,
           status: canFit ? 'REQUEST_SUBMITTED' : 'WAITLIST_REQUESTED',
           message: canFit
-            ? 'Family exome request submitted.'
-            : 'Family exome waitlist requested.',
+            ? 'Family analysis request submitted.'
+            : 'Family analysis waitlist requested.',
           changed_by: id_credentials
         });
       }
@@ -1306,7 +1306,7 @@ app.post('/api/approve-request', async (req, res) => {
 
       return res.status(400).json({
         status: 'error',
-        message: 'Not enough available slots for this request.'
+        message: 'Not enough analysis capacity for this request.'
       });
     }
 
@@ -1340,7 +1340,7 @@ app.post('/api/approve-request', async (req, res) => {
       id_request: requestId,
       id_request_group: request.id_request_group,
       status: 'APPROVED',
-      message: 'Exome request approved.',
+      message: 'Analysis request approved.',
       changed_by: approverId
     });
 

@@ -40,13 +40,13 @@ const HomePage = () => {
     <main className="home-content">
       <div className="home-container">
         <div className="welcome-section">
-          <h1>Available Exomes</h1>
+          <h1>Available Analyses</h1>
         </div>
         
         {loading ? (
           <div className="loading-message">
             <i className="fas fa-spinner fa-spin"></i>
-            <p>Loading exomes...</p>
+            <p>Loading analyses...</p>
           </div>
         ) : (
           <div className="exomes-grid">
@@ -65,12 +65,12 @@ const HomePage = () => {
                   <div className="exome-details">
                     <div className="slot-info">
                       <i className="fas fa-users"></i>
-                      <span>Available Slots: {exome.available_slots} / {exome.slot}</span>
+                      <span>Available Capacity: {exome.available_slots} / {exome.slot}</span>
                     </div>
                     <div className="exome-meta">
                       <div className="detail-item">
                         <i className="fas fa-cog"></i>
-                        <span>Runs: {exome.runs}</span>
+                        <span>Analysis Runs: {exome.runs}</span>
                       </div>
                       {exome.batch && (
                         <div className="detail-item">
@@ -94,7 +94,7 @@ const HomePage = () => {
                     disabled={exome.available_slots <= 0}
                   >
                     <i className="fas fa-paper-plane"></i>
-                    {exome.available_slots <= 0 ? 'No Slots Available' : 'Request Access'}
+                    {exome.available_slots <= 0 ? 'No Analysis Capacity' : 'Request Analysis'}
                   </button>
                 </div>
               </div>
@@ -106,4 +106,4 @@ const HomePage = () => {
   );
 };
 
-export default HomePage; 
+export default HomePage;

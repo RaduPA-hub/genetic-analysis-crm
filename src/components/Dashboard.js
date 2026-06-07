@@ -5,10 +5,10 @@ import './Dashboard.css';
 // Validation schema for exome creation
 const exomeValidationSchema = Yup.object().shape({
   name: Yup.string()
-    .required('Exome name is required')
-    .min(3, 'Exome name must be at least 3 characters')
-    .max(100, 'Exome name must be no more than 100 characters'),
-  
+    .required('Analysis name is required')
+    .min(3, 'Analysis name must be at least 3 characters')
+    .max(100, 'Analysis name must be no more than 100 characters'),
+
   tag: Yup.string()
     .max(50, 'Tag must be no more than 50 characters'),
   
@@ -16,16 +16,16 @@ const exomeValidationSchema = Yup.object().shape({
     .max(500, 'Description must be no more than 500 characters'),
   
   slot: Yup.number()
-    .required('Number of slots is required')
-    .min(1, 'Must have at least 1 slot')
-    .max(1000, 'Cannot have more than 1000 slots')
-    .integer('Slots must be a whole number'),
-  
+    .required('Analysis capacity is required')
+    .min(1, 'Analysis capacity must be at least 1')
+    .max(1000, 'Analysis capacity cannot exceed 1000')
+    .integer('Analysis capacity must be a whole number'),
+
   runs: Yup.number()
-    .required('Number of runs is required')
-    .min(0, 'Runs cannot be negative')
-    .max(1000, 'Cannot have more than 1000 runs')
-    .integer('Runs must be a whole number'),
+    .required('Number of analysis runs is required')
+    .min(0, 'Analysis runs cannot be negative')
+    .max(1000, 'Cannot have more than 1000 analysis runs')
+    .integer('Analysis runs must be a whole number'),
   
   batch: Yup.string()
     .max(50, 'Batch must be no more than 50 characters'),
@@ -64,7 +64,24 @@ const Dashboard = ({ onLogout }) => {
     status: 'Active'
   });
   const [exomeErrors, setExomeErrors] = useState({});
+  const getFamilyRelationLabel = (relation) => {
+    const relations = {
+      1: 'Proband (Primary Patient)',
+      2: 'Mother',
+      3: 'Father',
+      4: 'Sibling',
+      5: 'GrandmotherM',
+      6: 'GrandfatherM',
+      7: 'GrandmotherF',
+      8: 'GrandfatherF',
+      9: 'Aunt',
+      10: 'Uncle',
+      11: 'Cousin',
+      12: 'Other'
+    };
 
+    return relations[Number(relation)] || 'Unknown';
+  };
   // Fetch pending users from API
   const fetchPendingUsers = async () => {
     setLoading(true);
@@ -160,7 +177,7 @@ const Dashboard = ({ onLogout }) => {
       }
     } catch (error) {
       console.error('Error creating exome:', error);
-      return { success: false, message: 'Error creating exome' };
+      return { success: false, message: 'Error creating analysis' };
     }
   };
 
@@ -183,7 +200,7 @@ const Dashboard = ({ onLogout }) => {
       }
     } catch (error) {
       console.error('Error updating exome:', error);
-      return { success: false, message: 'Error updating exome' };
+      return { success: false, message: 'Error updating analysis' };
     }
   };
 
@@ -202,7 +219,7 @@ const Dashboard = ({ onLogout }) => {
       }
     } catch (error) {
       console.error('Error deleting exome:', error);
-      return { success: false, message: 'Error deleting exome' };
+      return { success: false, message: 'Error deleting analysis' };
     }
   };
 
@@ -289,12 +306,12 @@ const Dashboard = ({ onLogout }) => {
         alert(result.message);
       }
     } else {
-      alert('Please fill in all required fields (Name, Slot, Runs)');
+      alert('Please fill in all required fields (Name, Capacity, Analysis Runs)');
     }
   };
 
   const handleDeleteExome = async (exomeId) => {
-    if (window.confirm('Are you sure you want to delete this exome?')) {
+    if (window.confirm('Are you sure you want to delete this analysis?')) {
       const result = await deleteExome(exomeId);
       if (result.success) {
         alert(result.message);
@@ -398,7 +415,7 @@ const Dashboard = ({ onLogout }) => {
       <div className="dashboard-container">
         <div className="dashboard-header">
           <h1>Admin Dashboard</h1>
-          <p>Manage exomes, user registrations, and service requests</p>
+          <p>Manage analyses, user registrations, and service requests</p>
         </div>
         
         <div className="dashboard-tabs">
@@ -407,7 +424,7 @@ const Dashboard = ({ onLogout }) => {
             onClick={() => setActiveTab('exomes')}
           >
             <i className="fas fa-dna"></i>
-            Manage Exomes
+            Manage Analyses
           </button>
           <button 
             className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
@@ -430,20 +447,20 @@ const Dashboard = ({ onLogout }) => {
           {activeTab === 'exomes' && (
             <div className="tab-content">
               <div className="section-header">
-                <h2>Manage Exomes</h2>
+                <h2>Manage Analyses</h2>
                 <button className="add-exome-btn" onClick={() => {
                   setEditingExome({});
                   setNewExome({name: '', tag: '', description: '', slot: '', runs: '', batch: '', expire_at: '', status: 'Active'});
                 }}>
                   <i className="fas fa-plus"></i>
-                  Add New Exome
+                  Add New Analysis
                 </button>
               </div>
               
               {/* Add/Edit Exome Form */}
               {editingExome !== null && (
                 <div className="exome-form">
-                  <h3>{editingExome.id_exome ? 'Edit Exome' : 'Add New Exome'}</h3>
+                  <h3>{editingExome.id_exome ? 'Edit Analysis' : 'Add New Analysis'}</h3>
                   <div className="form-row">
                     <div className="form-group">
                       <label>Name *</label>
@@ -451,7 +468,7 @@ const Dashboard = ({ onLogout }) => {
                         type="text"
                         value={newExome.name}
                         onChange={(e) => setNewExome({...newExome, name: e.target.value})}
-                        placeholder="Exome name"
+                        placeholder="Analysis name"
                         required
                       />
                       {exomeErrors.name && <span className="error-message">{exomeErrors.name}</span>}
@@ -468,24 +485,24 @@ const Dashboard = ({ onLogout }) => {
                   </div>
                   <div className="form-row">
                     <div className="form-group">
-                      <label>Slot *</label>
+                      <label>Capacity *</label>
                       <input
                         type="number"
                         value={newExome.slot}
                         onChange={(e) => setNewExome({...newExome, slot: parseInt(e.target.value) || ''})}
-                        placeholder="Total slots available"
+                        placeholder="Total analysis capacity"
                         min="1"
                         required
                       />
                       {exomeErrors.slot && <span className="error-message">{exomeErrors.slot}</span>}
                     </div>
                     <div className="form-group">
-                      <label>Runs *</label>
+                      <label>Analysis Runs *</label>
                       <input
                         type="number"
                         value={newExome.runs}
                         onChange={(e) => setNewExome({...newExome, runs: parseInt(e.target.value) || ''})}
-                        placeholder="Number of runs"
+                        placeholder="Number of analysis runs"
                         min="0"
                         required
                       />
@@ -497,7 +514,7 @@ const Dashboard = ({ onLogout }) => {
                     <textarea
                       value={newExome.description}
                       onChange={(e) => setNewExome({...newExome, description: e.target.value})}
-                      placeholder="Exome description"
+                      placeholder="Analysis description"
                       rows="3"
                     />
                   </div>
@@ -538,7 +555,7 @@ const Dashboard = ({ onLogout }) => {
                           Cancel
                         </button>
                         <button className="btn-primary" onClick={handleUpdateExome}>
-                          Update Exome
+                          Update Analysis
                         </button>
                       </>
                     ) : (
@@ -547,7 +564,7 @@ const Dashboard = ({ onLogout }) => {
                           Cancel
                         </button>
                         <button className="btn-primary" onClick={handleAddExome}>
-                          Add Exome
+                          Add Analysis
                         </button>
                       </>
                     )}
@@ -560,13 +577,13 @@ const Dashboard = ({ onLogout }) => {
                 {loading ? (
                   <div className="loading-message">
                     <i className="fas fa-spinner fa-spin"></i>
-                    Loading exomes...
+                    Loading analyses...
                   </div>
                 ) : exomes.length === 0 ? (
                   <div className="empty-state">
                     <i className="fas fa-dna"></i>
-                    <h3>No Exomes Found</h3>
-                    <p>Create your first exome to get started.</p>
+                    <h3>No Analyses Found</h3>
+                    <p>Create your first analysis to get started.</p>
                   </div>
                 ) : (
                   exomes.map((exome) => (
@@ -581,13 +598,13 @@ const Dashboard = ({ onLogout }) => {
                         <p className="exome-description">{exome.description}</p>
                         <div className="exome-details">
                           <div className="slot-info">
-                            <span className="slot-label">Available Slots:</span>
+                            <span className="slot-label">Available Capacity:</span>
                             <span className={`slot-count ${exome.available_slots <= 2 ? 'low-slots' : ''}`}>
                               {exome.available_slots} / {exome.slot}
                             </span>
                           </div>
                           <div className="exome-meta">
-                            <span className={exome.runs === 0 ? 'zero-runs-text' : ''}>Runs: {exome.runs}</span>
+                            <span className={exome.runs === 0 ? 'zero-runs-text' : ''}>Analysis Runs: {exome.runs}</span>
                             {exome.batch && <span>Batch: {exome.batch}</span>}
                             {exome.expire_at && <span>Expires: {new Date(exome.expire_at).toLocaleDateString()}</span>}
                           </div>
@@ -640,7 +657,7 @@ const Dashboard = ({ onLogout }) => {
                   {loading ? (
                     <p>Loading patients...</p>
                   ) : exomePatients.length === 0 ? (
-                    <p>No patients assigned to this exome yet.</p>
+                    <p>No patients assigned to this analysis yet.</p>
                   ) : (
                     <div className="patients-list">
                       {exomePatients.map((patient) => (
@@ -652,7 +669,7 @@ const Dashboard = ({ onLogout }) => {
                               <p><strong>Sex:</strong> {patient.sex}</p>
                               <p><strong>Family ID:</strong> {patient.family_identifier}</p>
                               <p><strong>Description:</strong> {patient.description || 'No description'}</p>
-                              <p><strong>Added to Exome:</strong> {new Date(patient.started_at).toLocaleDateString()}</p>
+                              <p><strong>Added to Analysis:</strong> {new Date(patient.started_at).toLocaleDateString()}</p>
                               {patient.end_at && (
                                 <p><strong>Completed:</strong> {new Date(patient.end_at).toLocaleDateString()}</p>
                               )}
@@ -731,7 +748,7 @@ const Dashboard = ({ onLogout }) => {
           {/* Pending Requests Tab */}
           {activeTab === 'requests' && (
             <div className="tab-content">
-              <h2>Pending Exome Requests</h2>
+              <h2>Pending Analysis Requests</h2>
               <div className="requests-list">
                 {pendingRequests.length === 0 ? (
                   <p>No pending requests</p>
@@ -765,7 +782,7 @@ const Dashboard = ({ onLogout }) => {
                               <h5>{patient.initials}</h5>
                               <p>
                                 Age: {patient.age ?? 'N/A'} | Sex: {patient.sex || 'N/A'} |
-                                Relation: {patient.family_relation ?? 'N/A'}
+                                Relation: {getFamilyRelationLabel(patient.family_relation)}
                               </p>
                               <p>{patient.description || 'No description'}</p>
                               <p className="request-reason">Reason: {patient.reason || 'Not specified'}</p>

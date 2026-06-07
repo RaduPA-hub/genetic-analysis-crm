@@ -78,14 +78,14 @@ const FamilyPage = ({ currentUser }) => {
   
       if (data.status !== 'ok') {
   console.error('REQUEST ERROR:', data);
-  alert(data.message || 'Failed to request exome');
+  alert(data.message || 'Failed to request analysis');
   return;
 }
   
       await fetchFamilies();
     } catch (err) {
       console.error(err);
-      alert(err.message || 'Failed to request exome');
+      alert(err.message || 'Failed to request analysis');
     }
   };
   const deleteFamily = async (familyId) => {
@@ -166,7 +166,7 @@ const canFitSelectedGroup =
 
 const confirmExomeRequest = async () => {
   if (!selectedExome) {
-    alert('Please select an exome');
+    alert('Please select an analysis');
     return;
   }
 
@@ -188,7 +188,7 @@ const confirmExomeRequest = async () => {
     const data = await res.json();
 
     if (data.status !== 'ok') {
-      alert(data.message || 'Failed to request exome');
+      alert(data.message || 'Failed to request analysis');
       return;
     }
 
@@ -199,7 +199,7 @@ const confirmExomeRequest = async () => {
     await fetchFamilyPatients(selectedFamily);
   } catch (err) {
     console.error(err);
-    alert('Failed to request exome');
+    alert('Failed to request analysis');
   } finally {
     setRequestLoading(false);
   }
@@ -213,7 +213,7 @@ const confirmExomeRequest = async () => {
       <div className="family-hero">
         <div>
           <h1>Families</h1>
-          <p>Create and manage patient families for exome requests.</p>
+          <p>Create and manage patient families for analysis requests.</p>
         </div>
   
         <button className="family-create-btn" onClick={createFamily}>
@@ -281,7 +281,7 @@ const confirmExomeRequest = async () => {
           <div className="family-details-header">
             <div>
                 <h2>Family Patients</h2>
-                <p>Select patients from this family for an exome request.</p>
+                <p>Select patients from this family for an analysis request.</p>
             </div>
 
             <div className="family-details-actions">
@@ -293,7 +293,7 @@ const confirmExomeRequest = async () => {
 
                 <button className="family-action-primary" onClick={openRequestModal}>
                   <i className="fas fa-dna"></i>
-                  Request Exome
+                  Request Analysis
                 </button>
 
                 <button className="family-action-secondary" onClick={selectEntireFamily}>
@@ -351,7 +351,7 @@ const confirmExomeRequest = async () => {
         <div className="family-modal">
           <div className="family-modal-header">
             <div>
-              <h2>Request Exome</h2>
+              <h2>Request Analysis</h2>
               <p>{selectedCount} selected patient(s)</p>
             </div>
 
@@ -365,7 +365,7 @@ const confirmExomeRequest = async () => {
 
           <div className="family-modal-body">
             <label className="family-modal-label">
-              Choose exome
+              Choose analysis
             </label>
 
             <select
@@ -373,7 +373,7 @@ const confirmExomeRequest = async () => {
               value={selectedExomeId}
               onChange={(e) => setSelectedExomeId(e.target.value)}
             >
-              <option value="">Select an exome</option>
+              <option value="">Select an analysis</option>
               {exomes.map((exome) => (
                 <option key={exome.id_exome} value={exome.id_exome}>
                   {exome.name} — {exome.available_slots} / {exome.slot} available
@@ -389,7 +389,7 @@ const confirmExomeRequest = async () => {
               >
                 <h3>
                   {canFitSelectedGroup
-                    ? 'This group can fit in the selected exome.'
+                    ? 'This group can fit in the selected analysis.'
                     : 'This group cannot fit right now.'}
                 </h3>
 
@@ -405,7 +405,7 @@ const confirmExomeRequest = async () => {
                 </div>
 
                 <div className="request-capacity-row">
-                  <span>Available slots</span>
+                  <span>Available capacity</span>
                   <strong>{selectedExome.available_slots}</strong>
                 </div>
               </div>

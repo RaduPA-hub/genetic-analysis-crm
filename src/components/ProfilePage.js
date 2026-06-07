@@ -13,14 +13,14 @@ const ProfilePage = ({ onLogout }) => {
   const [requestedExomes] = useState([
     {
       id: 1,
-      name: "Whole Exome Sequencing",
+      name: "Whole Genome Analysis",
       status: "Pending",
       requestDate: "2024-01-15",
       category: "Genetic Testing"
     },
     {
       id: 3,
-      name: "Cardiovascular Exome",
+      name: "Cardiovascular Analysis",
       status: "Pending",
       requestDate: "2024-01-10",
       category: "Cardiology"
@@ -30,7 +30,7 @@ const ProfilePage = ({ onLogout }) => {
   const [validatedRequests] = useState([
     {
       id: 2,
-      name: "Targeted Exome Panel",
+      name: "Targeted Genetic Panel",
       status: "Approved",
       requestDate: "2024-01-05",
       approvalDate: "2024-01-08",
@@ -110,7 +110,7 @@ const ProfilePage = ({ onLogout }) => {
       <div className="profile-container">
         <div className="profile-header">
           <h1>Profile</h1>
-          <p>Manage your account settings and view your exome requests</p>
+          <p>Manage your account settings and view your analysis requests</p>
         </div>
         
         <div className="profile-sections">
@@ -175,7 +175,7 @@ const ProfilePage = ({ onLogout }) => {
           
           {/* Requested Exomes Section */}
           <div className="profile-section">
-            <h2>My Exome Requests</h2>
+            <h2>My Analysis Requests</h2>
             <div className="requests-list">
               {requestedExomes.map((exome) => (
                 <div key={exome.id} className="request-item">
@@ -217,4 +217,4 @@ const ProfilePage = ({ onLogout }) => {
   );
 };
 
-export default ProfilePage; 
+export default ProfilePage;

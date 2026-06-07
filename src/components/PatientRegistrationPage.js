@@ -340,8 +340,8 @@ const PatientRegistrationPage = () => {
     return (
       <div className="patient-registration-page">
         <div className="error-container">
-          <h2>No Exome Selected</h2>
-          <p>Please select an exome from the home page to register a patient.</p>
+          <h2>No Analysis Selected</h2>
+          <p>Please select an analysis from the home page to register a patient.</p>
           <button onClick={() => navigate('/')} className="btn-primary">
             Go to Home
           </button>
