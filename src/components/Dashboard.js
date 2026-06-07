@@ -338,8 +338,15 @@ const Dashboard = ({ onLogout }) => {
       const data = await response.json();
       
       if (data.status === 'ok') {
-        // Remove the approved request from the list
-        setPendingRequests(prevRequests => prevRequests.filter(req => req.id_request !== requestId));
+        setPendingRequests(prevRequests => prevRequests
+          .map(requestGroup => {
+            const patients = requestGroup.patients.filter(patient => patient.id_request !== requestId);
+            return {
+              ...requestGroup,
+              patients
+            };
+          })
+          .filter(requestGroup => requestGroup.patients.length > 0));
         alert('Request approved successfully!');
       } else {
         alert(`Error approving request: ${data.message}`);
@@ -367,8 +374,15 @@ const Dashboard = ({ onLogout }) => {
       const data = await response.json();
       
       if (data.status === 'ok') {
-        // Remove the rejected request from the list
-        setPendingRequests(prevRequests => prevRequests.filter(req => req.id_request !== requestId));
+        setPendingRequests(prevRequests => prevRequests
+          .map(requestGroup => {
+            const patients = requestGroup.patients.filter(patient => patient.id_request !== requestId);
+            return {
+              ...requestGroup,
+              patients
+            };
+          })
+          .filter(requestGroup => requestGroup.patients.length > 0));
         alert('Request rejected successfully!');
       } else {
         alert(`Error rejecting request: ${data.message}`);
@@ -722,26 +736,61 @@ const Dashboard = ({ onLogout }) => {
                 {pendingRequests.length === 0 ? (
                   <p>No pending requests</p>
                 ) : (
-                  pendingRequests.map((request) => (
-                    <div key={request.id_request} className="request-item">
-                      <div className="request-info">
-                        <h4>{request.exome_name}</h4>
-                        <p className="request-user">Requested by: Dr. {request.f_name} {request.l_name}</p>
-                        <p className="request-email">{request.email}</p>
-                        <p className="request-center">Center: {request.center}</p>
-                        <p className="request-patient">Patient: {request.patient_initials} (Age: {request.age}, Sex: {request.sex})</p>
-                        <p className="request-reason">Reason: {request.reason}</p>
-                        <p className="request-date">Request Date: {new Date(request.request_date).toLocaleDateString()}</p>
+                  pendingRequests.map((requestGroup) => (
+                    <div
+                      key={requestGroup.id_request_group
+                        ? `group-${requestGroup.id_request_group}`
+                        : `request-${requestGroup.patients[0].id_request}`}
+                      className="request-item grouped-request-card"
+                    >
+                      <div className="request-info request-group-header">
+                        <h4>{requestGroup.exome_name}</h4>
+                        <p className="request-user">
+                          Requested by: Dr. {requestGroup.f_name} {requestGroup.l_name}
+                        </p>
+                        <p className="request-email">{requestGroup.email}</p>
+                        <p className="request-center">Center: {requestGroup.center || 'Not specified'}</p>
+                        <div className="request-group-meta">
+                          <span>{requestGroup.request_type} request</span>
+                          <span>
+                            {requestGroup.patient_count} {requestGroup.patient_count === 1 ? 'patient' : 'family members'}
+                          </span>
+                        </div>
                       </div>
-                      <div className="request-actions">
-                        <button className="btn-primary" onClick={() => handleApproveRequest(request.id_request)}>
-                          <i className="fas fa-check"></i>
-                          Approve
-                        </button>
-                        <button className="btn-danger" onClick={() => handleRejectRequest(request.id_request)}>
-                          <i className="fas fa-times"></i>
-                          Reject
-                        </button>
+
+                      <div className="request-patient-list">
+                        {requestGroup.patients.map((patient) => (
+                          <div key={patient.id_request} className="request-patient-row">
+                            <div className="request-patient-details">
+                              <h5>{patient.initials}</h5>
+                              <p>
+                                Age: {patient.age ?? 'N/A'} | Sex: {patient.sex || 'N/A'} |
+                                Relation: {patient.family_relation ?? 'N/A'}
+                              </p>
+                              <p>{patient.description || 'No description'}</p>
+                              <p className="request-reason">Reason: {patient.reason || 'Not specified'}</p>
+                              <p className="request-date">
+                                Request Date: {new Date(patient.request_date).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div className="request-actions">
+                              <button
+                                className="btn-primary"
+                                onClick={() => handleApproveRequest(patient.id_request)}
+                              >
+                                <i className="fas fa-check"></i>
+                                Approve
+                              </button>
+                              <button
+                                className="btn-danger"
+                                onClick={() => handleRejectRequest(patient.id_request)}
+                              >
+                                <i className="fas fa-times"></i>
+                                Reject
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   ))
@@ -755,4 +804,4 @@ const Dashboard = ({ onLogout }) => {
   );
 };
 
-export default Dashboard; 
+export default Dashboard;

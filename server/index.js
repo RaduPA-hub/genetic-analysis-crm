@@ -6,6 +6,41 @@ const { pool } = require('./pg');
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+async function createAnalysisLog(db, {
+  id_pacient,
+  id_exome,
+  id_request,
+  id_request_group,
+  status,
+  message,
+  changed_by
+}) {
+  await db.query(
+    `
+    INSERT INTO analysis_status_log (
+      id_pacient,
+      id_exome,
+      id_request,
+      id_request_group,
+      status,
+      message,
+      changed_by
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `,
+    [
+      id_pacient,
+      id_exome ?? null,
+      id_request ?? null,
+      id_request_group ?? null,
+      status,
+      message ?? null,
+      changed_by ?? null
+    ]
+  );
+}
+
 async function generateFamilyCode() {
   const result = await pool.query(
     `SELECT nextval('family_identifier_seq') AS seq`
@@ -1029,7 +1064,7 @@ app.post('/api/family-exome-request', async (req, res) => {
 
     const requestGroupId = groupResult.rows[0].id_request_group;
       for (const patientId of patient_ids) {
-        await client.query(
+        const requestResult = await client.query(
           `
           INSERT INTO exome_request (
             id_exome,
@@ -1040,6 +1075,7 @@ app.post('/api/family-exome-request', async (req, res) => {
             status
           )
           VALUES ($1, $2, $3, $4, $5, 'Pending')
+          RETURNING id_request
           `,
           [
             id_exome,
@@ -1051,6 +1087,18 @@ app.post('/api/family-exome-request', async (req, res) => {
             requestGroupId
           ]
         );
+
+        await createAnalysisLog(client, {
+          id_pacient: patientId,
+          id_exome,
+          id_request: requestResult.rows[0].id_request,
+          id_request_group: requestGroupId,
+          status: canFit ? 'REQUEST_SUBMITTED' : 'WAITLIST_REQUESTED',
+          message: canFit
+            ? 'Family exome request submitted.'
+            : 'Family exome waitlist requested.',
+          changed_by: id_credentials
+        });
       }
 
     await client.query('COMMIT');
@@ -1078,87 +1126,76 @@ app.post('/api/family-exome-request', async (req, res) => {
 app.get('/api/pending-requests', async (req, res) => {
   try {
     const query = `
-      SELECT 
-        MIN(er.id_request) AS id_request,
-        MAX(er.request_date) AS request_date,
-        MAX(er.reason) AS reason,
-        'Pending' AS status,
-
+      SELECT
+        er.id_request,
+        er.id_pacient,
+        er.request_date,
+        er.reason,
+        er.status,
         erg.id_request_group,
         erg.status AS group_status,
         erg.requested_count,
-
         e.name AS exome_name,
-
-        COUNT(er.id_request) AS patient_count,
-
-        COALESCE(
-          MAX(CASE WHEN p.family_relation = 1 THEN p.initials END),
-          MIN(p.initials)
-        ) AS patient_initials,
-
-        MAX(p.age) FILTER (
-          WHERE p.initials = COALESCE(
-            (SELECT p2.initials
-             FROM exome_request er2
-             JOIN pacient p2 ON p2.id_pacient = er2.id_pacient
-             WHERE er2.id_request_group = erg.id_request_group
-             ORDER BY CASE WHEN p2.family_relation = 1 THEN 0 ELSE 1 END, p2.id_pacient ASC
-             LIMIT 1),
-            p.initials
-          )
-        ) AS age,
-
-        MAX(p.sex) FILTER (
-          WHERE p.initials = COALESCE(
-            (SELECT p2.initials
-             FROM exome_request er2
-             JOIN pacient p2 ON p2.id_pacient = er2.id_pacient
-             WHERE er2.id_request_group = erg.id_request_group
-             ORDER BY CASE WHEN p2.family_relation = 1 THEN 0 ELSE 1 END, p2.id_pacient ASC
-             LIMIT 1),
-            p.initials
-          )
-        ) AS sex,
-
-        COALESCE(
-          MAX(CASE WHEN p.family_relation = 1 THEN p.description END),
-          MIN(p.description)
-        ) AS patient_description,
-
+        p.initials,
+        p.age,
+        p.sex,
+        p.family_relation,
+        p.description,
         c.f_name,
         c.l_name,
         c.email,
         c.center
-
       FROM exome_request er
       JOIN exome e ON er.id_exome = e.id_exome
       JOIN pacient p ON er.id_pacient = p.id_pacient
       JOIN credentials c ON er.id_credentials = c.id_credentials
-      LEFT JOIN exome_request_group erg 
+      LEFT JOIN exome_request_group erg
         ON erg.id_request_group = er.id_request_group
-
       WHERE er.status = 'Pending'
-
-      GROUP BY 
-        COALESCE(erg.id_request_group, er.id_request),
-        erg.id_request_group,
-        erg.status,
-        erg.requested_count,
-        e.name,
-        c.f_name,
-        c.l_name,
-        c.email,
-        c.center
-
-      ORDER BY MAX(er.request_date) DESC
+      ORDER BY er.request_date DESC, er.id_request ASC
     `;
 
     const { rows } = await pool.query(query);
+    const groupedRequests = new Map();
+
+    for (const row of rows) {
+      const groupKey = row.id_request_group
+        ? `group-${row.id_request_group}`
+        : `request-${row.id_request}`;
+
+      if (!groupedRequests.has(groupKey)) {
+        groupedRequests.set(groupKey, {
+          id_request_group: row.id_request_group,
+          group_status: row.group_status,
+          exome_name: row.exome_name,
+          f_name: row.f_name,
+          l_name: row.l_name,
+          email: row.email,
+          center: row.center,
+          request_type: row.group_status === 'Waiting' ? 'Waitlist' : 'Direct',
+          patient_count: row.id_request_group ? Number(row.requested_count) : 1,
+          patients: []
+        });
+      }
+
+      const requestGroup = groupedRequests.get(groupKey);
+      requestGroup.patients.push({
+        id_request: row.id_request,
+        id_pacient: row.id_pacient,
+        initials: row.initials,
+        age: row.age,
+        sex: row.sex,
+        family_relation: row.family_relation,
+        description: row.description,
+        status: row.status,
+        reason: row.reason,
+        request_date: row.request_date
+      });
+    }
 
     res.json({
       status: 'ok',
-      requests: rows
+      requests: Array.from(groupedRequests.values())
     });
   } catch (err) {
     console.error('Error fetching pending requests:', err);
@@ -1179,6 +1216,7 @@ app.post('/api/approve-request', async (req, res) => {
     const { requestId, approvedBy } = req.body;
 
     if (!requestId) {
+      await client.query('ROLLBACK');
       return res.status(400).json({
         status: 'error',
         message: 'Request ID is required'
@@ -1190,24 +1228,25 @@ app.post('/api/approve-request', async (req, res) => {
       SELECT 
         er.*,
         erg.status AS group_status,
-        erg.id_request_group,
-        erg.requested_count,
         e.slot,
-        COUNT(existing_runs.id_exome_run) AS used_slots
+        (
+          SELECT COUNT(*)
+          FROM exome_run existing_runs
+          WHERE existing_runs.id_exome = er.id_exome
+        ) AS used_slots
       FROM exome_request er
       JOIN exome e ON er.id_exome = e.id_exome
-      LEFT JOIN exome_request_group erg 
+      LEFT JOIN exome_request_group erg
         ON erg.id_request_group = er.id_request_group
-      LEFT JOIN exome_run existing_runs 
-        ON existing_runs.id_exome = er.id_exome
       WHERE er.id_request = $1
         AND er.status = 'Pending'
-      GROUP BY er.id_request, erg.id_request_group, e.slot
+      FOR UPDATE OF er
       `,
       [requestId]
     );
 
     if (requestResult.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({
         status: 'error',
         message: 'Request not found or already processed'
@@ -1228,117 +1267,9 @@ app.post('/api/approve-request', async (req, res) => {
       }
     }
 
-    const groupId = request.id_request_group;
-    const isGroupedRequest = !!groupId;
     const isWaitlistDecision = request.group_status === 'Waiting';
 
-    if (isGroupedRequest && isWaitlistDecision) {
-      await client.query(
-        `
-        UPDATE exome_request
-        SET status = 'Approved',
-            approved_by = $1,
-            approved_at = NOW()
-        WHERE id_request_group = $2
-          AND status = 'Pending'
-        `,
-        [approverId, groupId]
-      );
-
-      await client.query(
-        `
-        INSERT INTO exome_waitlist (
-          id_request_group,
-          id_exome,
-          status
-        )
-        VALUES ($1, $2, 'Waiting')
-        ON CONFLICT (id_request_group) DO NOTHING
-        `,
-        [groupId, request.id_exome]
-      );
-
-      await client.query(
-        `
-        UPDATE exome_request_group
-        SET status = 'Waiting'
-        WHERE id_request_group = $1
-        `,
-        [groupId]
-      );
-
-      await client.query('COMMIT');
-
-      return res.json({
-        status: 'ok',
-        message: 'Request approved and added to waitlist.'
-      });
-    }
-
-    const availableSlots = Number(request.slot) - Number(request.used_slots);
-    const neededSlots = isGroupedRequest
-      ? Number(request.requested_count)
-      : 1;
-
-    if (availableSlots < neededSlots) {
-      await client.query('ROLLBACK');
-
-      return res.status(400).json({
-        status: 'error',
-        message: 'Not enough available slots for this request.'
-      });
-    }
-
-    if (isGroupedRequest) {
-      const groupRequests = await client.query(
-        `
-        SELECT id_request, id_exome, id_pacient
-        FROM exome_request
-        WHERE id_request_group = $1
-          AND status = 'Pending'
-        `,
-        [groupId]
-      );
-
-      for (const groupRequest of groupRequests.rows) {
-        await client.query(
-          `
-          UPDATE exome_request
-          SET status = 'Approved',
-              approved_by = $1,
-              approved_at = NOW()
-          WHERE id_request = $2
-          `,
-          [approverId, groupRequest.id_request]
-        );
-
-        await client.query(
-          `
-          INSERT INTO exome_run (
-            id_exome,
-            id_pacient,
-            id_request,
-            started_at
-          )
-          VALUES ($1, $2, $3, NOW())
-          `,
-          [
-            groupRequest.id_exome,
-            groupRequest.id_pacient,
-            groupRequest.id_request
-          ]
-        );
-      }
-
-      await client.query(
-        `
-        UPDATE exome_request_group
-        SET status = 'Assigned'
-        WHERE id_request_group = $1
-        `,
-        [groupId]
-      );
-    } else {
+    if (isWaitlistDecision) {
       await client.query(
         `
         UPDATE exome_request
@@ -1350,19 +1281,68 @@ app.post('/api/approve-request', async (req, res) => {
         [approverId, requestId]
       );
 
-      await client.query(
-        `
-        INSERT INTO exome_run (
-          id_exome,
-          id_pacient,
-          id_request,
-          started_at
-        )
-        VALUES ($1, $2, $3, NOW())
-        `,
-        [request.id_exome, request.id_pacient, requestId]
-      );
+      await createAnalysisLog(client, {
+        id_pacient: request.id_pacient,
+        id_exome: request.id_exome,
+        id_request: requestId,
+        id_request_group: request.id_request_group,
+        status: 'WAITLISTED',
+        message: 'Request approved and added to waitlist.',
+        changed_by: approverId
+      });
+
+      await client.query('COMMIT');
+
+      return res.json({
+        status: 'ok',
+        message: 'Request approved and added to waitlist.'
+      });
     }
+
+    const availableSlots = Number(request.slot) - Number(request.used_slots);
+
+    if (availableSlots < 1) {
+      await client.query('ROLLBACK');
+
+      return res.status(400).json({
+        status: 'error',
+        message: 'Not enough available slots for this request.'
+      });
+    }
+
+    await client.query(
+      `
+      UPDATE exome_request
+      SET status = 'Approved',
+          approved_by = $1,
+          approved_at = NOW()
+      WHERE id_request = $2
+      `,
+      [approverId, requestId]
+    );
+
+    await client.query(
+      `
+      INSERT INTO exome_run (
+        id_exome,
+        id_pacient,
+        id_request,
+        started_at
+      )
+      VALUES ($1, $2, $3, NOW())
+      `,
+      [request.id_exome, request.id_pacient, requestId]
+    );
+
+    await createAnalysisLog(client, {
+      id_pacient: request.id_pacient,
+      id_exome: request.id_exome,
+      id_request: requestId,
+      id_request_group: request.id_request_group,
+      status: 'APPROVED',
+      message: 'Exome request approved.',
+      changed_by: approverId
+    });
 
     await client.query('COMMIT');
 
@@ -1415,54 +1395,86 @@ app.get('/api/exomes/:id/patients', async (req, res) => {
 
 // Reject exome request
 app.post('/api/reject-request', async (req, res) => {
+  const client = await pool.connect();
+
   try {
+    await client.query('BEGIN');
+
     const { requestId, rejectionReason, rejectedBy } = req.body;
-    
+
     if (!requestId) {
-      return res.status(400).json({ 
-        status: 'error', 
-        message: 'Request ID is required' 
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        status: 'error',
+        message: 'Request ID is required'
       });
     }
 
-    // Get a valid credentials ID for the rejector, or use null
+    const { rows: targetRows } = await client.query(
+      `
+      SELECT id_request, id_exome, id_pacient, id_request_group
+      FROM exome_request
+      WHERE id_request = $1
+        AND status = 'Pending'
+      FOR UPDATE
+      `,
+      [requestId]
+    );
+
+    if (targetRows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({
+        status: 'error',
+        message: 'Request not found or already processed'
+      });
+    }
+
+    const targetRequest = targetRows[0];
+    const rejectionMessage = rejectionReason || 'No reason provided';
+
     let rejectorId = null;
     if (rejectedBy) {
       const rejectorQuery = 'SELECT id_credentials FROM credentials WHERE id_credentials = $1';
-      const { rows: rejectorRows } = await pool.query(rejectorQuery, [rejectedBy]);
+      const { rows: rejectorRows } = await client.query(rejectorQuery, [rejectedBy]);
       if (rejectorRows.length > 0) {
         rejectorId = rejectorRows[0].id_credentials;
       }
     }
 
-    const query = `
-      UPDATE exome_request 
-      SET status = $1, rejection_reason = $2, approved_by = $3, approved_at = NOW()
-      WHERE id_request = $4 AND status = 'Pending'
-      RETURNING *
-    `;
-    
-    const { rows } = await pool.query(query, [
-      'Rejected', 
-      rejectionReason || 'No reason provided', 
-      rejectorId, 
-      requestId
-    ]);
+    await client.query(
+      `
+      UPDATE exome_request
+      SET status = 'Rejected',
+          rejection_reason = $1,
+          approved_by = $2,
+          approved_at = NOW()
+      WHERE id_request = $3
+      `,
+      [rejectionMessage, rejectorId, requestId]
+    );
 
-    if (rows.length === 0) {
-      return res.status(404).json({ 
-        status: 'error', 
-        message: 'Request not found or already processed' 
-      });
-    }
+    await createAnalysisLog(client, {
+      id_pacient: targetRequest.id_pacient,
+      id_exome: targetRequest.id_exome,
+      id_request: targetRequest.id_request,
+      id_request_group: targetRequest.id_request_group,
+      status: 'CANCELLED',
+      message: rejectionMessage,
+      changed_by: rejectorId
+    });
+
+    await client.query('COMMIT');
 
     res.json({
       status: 'ok',
       message: 'Request rejected successfully'
     });
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('Error rejecting request:', err);
     res.status(500).json({ status: 'error', message: err.message });
+  } finally {
+    client.release();
   }
 });
 
@@ -1470,5 +1482,3 @@ const port = process.env.PORT || 4000;
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });
-
-
