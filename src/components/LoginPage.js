@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './LoginPage.css';
 
-const LoginPage = ({ onLogin }) => {
+const LoginPage = ({ onLogin, onSwitchToSignup }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -44,11 +44,30 @@ const LoginPage = ({ onLogin }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (validateForm()) {
-      onLogin(formData);
+      try {
+        const resp = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: formData.email, password: formData.password })
+        });
+        const data = await resp.json();
+        console.log('LOGIN RESPONSE:', data);
+        if (!resp.ok || data.status !== 'ok') {
+          setErrors(prev => ({ ...prev, password: data.message || 'Login failed' }));
+          return;
+        }
+        onLogin({
+          id: data.user.id,
+          email: data.user.email,
+          role: data.user.role
+        });
+      } catch (err) {
+        setErrors(prev => ({ ...prev, password: 'Network error' }));
+      }
     }
   };
 
@@ -119,7 +138,7 @@ const LoginPage = ({ onLogin }) => {
           </form>
           
           <div className="login-footer">
-            <p>Don't have an account? <a href="#" className="signup-link">Sign up</a></p>
+            <p>Don't have an account? <a href="#" className="signup-link" onClick={(e) => { e.preventDefault(); onSwitchToSignup(); }}>Sign up</a></p>
           </div>
         </div>
       </div>

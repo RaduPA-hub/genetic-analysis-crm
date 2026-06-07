@@ -42,6 +42,20 @@ const Navbar = ({ isLoggedIn, userRole, currentPage, onPageChange, onLogout }) =
               </a>
             </li>
           )}
+          {userRole !== 'admin' && (
+            <li className="nav-item">
+              <a 
+                href="#" 
+                className={`nav-link ${currentPage === 'families' ? 'active' : ''}`}
+                onClick={(e) => { 
+                  e.preventDefault(); 
+                  handlePageChange('families'); 
+                }}
+              >
+                Families
+              </a>
+            </li>
+          )}
           <li className="nav-item">
             <a href="#" className="nav-link">About</a>
           </li>
