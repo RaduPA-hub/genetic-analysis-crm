@@ -311,6 +311,7 @@ const confirmExomeRequest = async () => {
                   <th>Select</th>
                   <th>Patient</th>
                   <th>Family Relation</th>
+                  <th>Affected</th>
                   <th>ID</th>
                 </tr>
               </thead>
@@ -330,6 +331,12 @@ const confirmExomeRequest = async () => {
 
                     <td>
                         {getFamilyRelationLabel(patient.family_relation)}
+                    </td>
+
+                    <td>
+                      <span className={`affected-badge ${patient.affected ? 'affected' : 'unaffected'}`}>
+                        {patient.affected ? 'Affected' : 'Unaffected'}
+                      </span>
                     </td>
 
                     <td>

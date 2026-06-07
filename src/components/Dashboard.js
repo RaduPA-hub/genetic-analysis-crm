@@ -784,6 +784,9 @@ const Dashboard = ({ onLogout }) => {
                                 Age: {patient.age ?? 'N/A'} | Sex: {patient.sex || 'N/A'} |
                                 Relation: {getFamilyRelationLabel(patient.family_relation)}
                               </p>
+                              <span className={`affected-badge ${patient.affected ? 'affected' : 'unaffected'}`}>
+                                {patient.affected ? 'Affected' : 'Unaffected'}
+                              </span>
                               <p>{patient.description || 'No description'}</p>
                               <p className="request-reason">Reason: {patient.reason || 'Not specified'}</p>
                               <p className="request-date">

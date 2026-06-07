@@ -45,6 +45,7 @@ const PatientRegistrationPage = () => {
     family_relation: '',
     age: '',
     sex: '',
+    affected: false,
     description: '',
     family_identifier: familyData?.identifier || '',
     id_family: familyData?.id_family || null,
@@ -190,10 +191,10 @@ const PatientRegistrationPage = () => {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, type, checked, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
     
     // Clear error when user starts typing
@@ -281,6 +282,7 @@ const PatientRegistrationPage = () => {
         ...formData,
         age: parseInt(formData.age),
         family_relation: parseInt(formData.family_relation),
+        affected: Boolean(formData.affected),
         hpo_terms: selectedHpoTerms.map(term => ({
           id_hpo: term.id_hpo,
           hpo_name: term.hpo_name
@@ -474,6 +476,22 @@ const PatientRegistrationPage = () => {
                 className={errors.description ? 'error' : ''}
               />
               {errors.description && <span className="error-message">{errors.description}</span>}
+            </div>
+
+            <div className="form-group affected-field">
+              <label className="affected-checkbox" htmlFor="affected">
+                <input
+                  type="checkbox"
+                  id="affected"
+                  name="affected"
+                  checked={formData.affected}
+                  onChange={handleInputChange}
+                />
+                <span>Affected</span>
+              </label>
+              <p className="affected-helper">
+                Patient has the disease or malformation under analysis.
+              </p>
             </div>
           </div>
 

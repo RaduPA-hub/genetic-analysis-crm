@@ -164,6 +164,24 @@
   .patient-table td {
     color: #111827;
   }
+
+  .affected-badge {
+    display: inline-block;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .affected-badge.affected {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+
+  .affected-badge.unaffected {
+    background: #dcfce7;
+    color: #166534;
+  }
   
   .empty-family-state {
     color: white;

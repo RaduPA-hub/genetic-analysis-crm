@@ -775,8 +775,8 @@ app.get('/api/hpo-terms', async (req, res) => {
   }
 });
 
-// Patient registration and exome request OLD
-/* app.post('/api/patient-registration', async (req, res) => {
+// Patient registration and exome request
+app.post('/api/patient-registration', async (req, res) => {
   const client = await pool.connect();
   
   try {
@@ -819,8 +819,8 @@ app.get('/api/hpo-terms', async (req, res) => {
 
     // Create patient
     const patientQuery = `
-      INSERT INTO pacient (id_family, initials, family_relation, age, sex, description, created_at)
-      VALUES ($1, $2, $3, $4, $5, $6, NOW())
+      INSERT INTO pacient (id_family, initials, family_relation, age, sex, affected, description, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
       RETURNING id_pacient
     `;
     
@@ -830,6 +830,7 @@ app.get('/api/hpo-terms', async (req, res) => {
       patient.family_relation,
       patient.age,
       patient.sex,
+      patient.affected ?? false,
       patient.description
     ]);
 
@@ -899,7 +900,6 @@ app.get('/api/hpo-terms', async (req, res) => {
     client.release();
   }
 });
-*/
 app.post('/api/family-patient-registration', async (req, res) => {
   const client = await pool.connect();
 
@@ -926,8 +926,8 @@ app.post('/api/family-patient-registration', async (req, res) => {
     }
 
     const patientQuery = `
-      INSERT INTO pacient (id_family, initials, family_relation, age, sex, description, created_at)
-      VALUES ($1, $2, $3, $4, $5, $6, NOW())
+      INSERT INTO pacient (id_family, initials, family_relation, age, sex, affected, description, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
       RETURNING id_pacient
     `;
 
@@ -937,6 +937,7 @@ app.post('/api/family-patient-registration', async (req, res) => {
       patient.family_relation,
       patient.age,
       patient.sex,
+      patient.affected ?? false,
       patient.description
     ]);
 
@@ -1140,6 +1141,7 @@ app.get('/api/pending-requests', async (req, res) => {
         p.age,
         p.sex,
         p.family_relation,
+        p.affected,
         p.description,
         c.f_name,
         c.l_name,
@@ -1186,6 +1188,7 @@ app.get('/api/pending-requests', async (req, res) => {
         age: row.age,
         sex: row.sex,
         family_relation: row.family_relation,
+        affected: row.affected,
         description: row.description,
         status: row.status,
         reason: row.reason,

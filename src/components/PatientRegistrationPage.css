@@ -142,6 +142,24 @@
   min-height: 120px;
 }
 
+.affected-checkbox {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.affected-checkbox input {
+  width: auto;
+  margin: 0;
+}
+
+.affected-helper {
+  margin: 6px 0 0;
+  color: #666;
+  font-size: 0.85rem;
+}
+
 .error-message {
   color: #e74c3c;
   font-size: 14px;
